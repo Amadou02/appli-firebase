@@ -45,7 +45,9 @@ export default function UserDashboard() {
       <Divider />
       <VStack p={3} space="2">
         <Heading size="sm">{item.title}</Heading>
-        <Box _text={{ color: 'muted.500' }}>{dayjs(item.createdAt.toDate()).format('LLLL')}</Box>
+        <Box _text={{color: 'muted.500'}}>
+          {dayjs(item.createdAt.toDate()).format('LLLL')}
+        </Box>
       </VStack>
     </Pressable>
   );
@@ -55,7 +57,7 @@ export default function UserDashboard() {
       <FlatList
         data={adverts}
         key={item => item.id}
-        ItemSeparatorComponent={<Divider />}
+        ItemSeparatorComponent={() => <Divider />}
         renderItem={renderItem}
       />
     </Box>

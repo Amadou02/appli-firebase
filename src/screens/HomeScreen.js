@@ -125,7 +125,7 @@ export default function HomeScreen() {
       <FlatList
         data={adverts}
         keyExtractor={item => item.id}
-        ItemSeparatorComponent={Divider}
+        ItemSeparatorComponent={() => <Divider />}
         renderItem={renderItem}
         ListEmptyComponent={() => <Text my="5">Aucun don n'est trouvé !</Text>}
       />
