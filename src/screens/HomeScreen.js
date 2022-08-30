@@ -101,7 +101,14 @@ export default function HomeScreen() {
   const renderItem = ({item}) => (
     <Pressable onPress={() => navigation.navigate('Details')}>
       <Divider />
-      <Box p="3">
+      <Box
+        p="3"
+        _dark={{
+          bg: 'coolGray.800',
+        }}
+        _light={{
+          bg: 'white',
+        }}>
         <VStack space="2">
           <Heading isTruncated size="sm">
             {item.title}
