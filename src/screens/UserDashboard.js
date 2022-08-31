@@ -3,7 +3,14 @@ import {ActivityIndicator} from 'react-native';
 import React, {useEffect, useState} from 'react';
 
 // firebase
-import {collection, getDocs, query, where} from 'firebase/firestore';
+import {
+  collection,
+  query,
+  where,
+  deleteDoc,
+  doc,
+  onSnapshot,
+} from 'firebase/firestore';
 import {db, auth} from '../firebase/config';
 
 import {
@@ -40,8 +47,9 @@ export default function UserDashboard() {
 
     const q = query(advertColRef, where('user_id', '==', user_id));
 
-    getDocs(q)
-      .then(querySnapshot => {
+    const unsubscribe = onSnapshot(
+      q,
+      querySnapshot => {
         const advertsArray = [];
         querySnapshot.forEach(doc => {
           advertsArray.push({
@@ -50,13 +58,13 @@ export default function UserDashboard() {
           });
         });
         setAdverts(advertsArray);
-      })
-      .catch(e => {
-        console.log(e.massage);
-      })
-      .finally(() => {
         setLoading(false);
-      });
+      },
+      error => {
+        console.log(e.massage);
+      },
+    );
+    return () => unsubscribe();
   }, []);
 
   // react-native-swipe-list-view
@@ -68,11 +76,20 @@ export default function UserDashboard() {
   };
 
   const deleteRow = (rowMap, rowKey) => {
-    closeRow(rowMap, rowKey);
-    const newData = [...adverts];
-    const prevIndex = adverts.findIndex(item => item.key === rowKey);
-    newData.splice(prevIndex, 1);
-    setAdverts(newData);
+    console.log(rowKey);
+    // on supprime la ligne dans la base
+    deleteDoc(doc(db, 'adverts', rowKey))
+      .then(querySnapShot => {
+        // closeRow(rowMap, rowKey);
+        // const newData = [...adverts];
+        // const prevIndex = adverts.findIndex(item => item.key === rowKey);
+        // newData.splice(prevIndex, 1);
+        // setAdverts(newData);
+        console.log('supp réussie !');
+      })
+      .catch(e => {
+        console.log(e.message);
+      });
   };
 
   const renderItem = ({item}) => (
@@ -95,59 +112,59 @@ export default function UserDashboard() {
     </Pressable>
   );
 
-  const renderHiddenItem = (data, rowMap) => (
-    <HStack flex="1" pl="2">
-      <Pressable
-        w="70"
-        ml="auto"
-        cursor="pointer"
-        bg="coolGray.200"
-        justifyContent="center"
-        onPress={() => closeRow(rowMap, data.item.key)}
-        _pressed={{
-          opacity: 0.5,
-        }}>
-        <VStack alignItems="center" space={2}>
-          <Icon
-            as={<Entypo name="dots-three-horizontal" />}
-            size="xs"
-            color="coolGray.800"
-          />
-          <Text fontSize="xs" fontWeight="medium" color="coolGray.800">
-            Archiver
-          </Text>
-        </VStack>
-      </Pressable>
-      <Pressable
-        w="70"
-        cursor="pointer"
-        bg="red.500"
-        justifyContent="center"
-        onPress={() => deleteRow(rowMap, data.item.key)}
-        _pressed={{
-          opacity: 0.5,
-        }}>
-        <VStack alignItems="center" space={2}>
-          <Icon as={<MaterialIcons name="delete" />} color="white" size="xs" />
-          <Text color="white" fontSize="xs" fontWeight="medium">
-            Supprimer
-          </Text>
-        </VStack>
-      </Pressable>
-    </HStack>
-  );
+  const renderHiddenItem = (data, rowMap) => {
+    return (
+      <HStack flex="1" pl="2">
+        <Pressable
+          w="70"
+          ml="auto"
+          cursor="pointer"
+          bg="coolGray.200"
+          justifyContent="center"
+          onPress={() => closeRow(rowMap, data.item.id)}
+          _pressed={{
+            opacity: 0.5,
+          }}>
+          <VStack alignItems="center" space={2}>
+            <Icon
+              as={<Entypo name="dots-three-horizontal" />}
+              size="xs"
+              color="coolGray.800"
+            />
+            <Text fontSize="xs" fontWeight="medium" color="coolGray.800">
+              Archiver
+            </Text>
+          </VStack>
+        </Pressable>
+        <Pressable
+          w="70"
+          cursor="pointer"
+          bg="red.500"
+          justifyContent="center"
+          onPress={() => deleteRow(rowMap, data.item.id)}
+          _pressed={{
+            opacity: 0.5,
+          }}>
+          <VStack alignItems="center" space={2}>
+            <Icon
+              as={<MaterialIcons name="delete" />}
+              color="white"
+              size="xs"
+            />
+            <Text color="white" fontSize="xs" fontWeight="medium">
+              Supprimer
+            </Text>
+          </VStack>
+        </Pressable>
+      </HStack>
+    );
+  };
 
   return loading ? (
     <ActivityIndicator />
   ) : (
     <Box flex={1} p={2}>
       <Heading size="md">Mes annonces</Heading>
-      {/* <FlatList
-        data={adverts}
-        key={item => item.id}
-        ItemSeparatorComponent={() => <Divider />}
-        renderItem={renderItem}
-      /> */}
 
       <SwipeListView
         data={adverts}
@@ -157,6 +174,7 @@ export default function UserDashboard() {
         previewRowKey={'0'}
         previewOpenValue={-40}
         previewOpenDelay={3000}
+        ItemSeparatorComponent={() => <Divider />}
         // onRowDidOpen={onRowDidOpen}
       />
     </Box>

@@ -15,6 +15,7 @@ import {
   VStack,
   Pressable,
   Avatar,
+  useTheme,
 } from 'native-base';
 
 import IonIcons from 'react-native-vector-icons/Ionicons';
@@ -22,6 +23,7 @@ import {AuthContext} from '../contexts/AuthContext';
 
 import {signOut} from 'firebase/auth';
 import {auth} from '../firebase/config';
+import {useColorScheme} from 'react-native';
 
 const Drawer = createDrawerNavigator();
 
@@ -49,7 +51,7 @@ const DrawerContent = props => {
             size="lg"
             mb={3}
             source={{
-              uri: null,
+              uri: auth.currentUser.photoURL,
             }}>
             AC
           </Avatar>
@@ -83,9 +85,18 @@ const DrawerContent = props => {
 };
 
 export default function DrawerNavigation() {
+  const schema = useColorScheme();
+  const theme = useTheme();
   return (
     <Box safeArea flex={1}>
-      <Drawer.Navigator drawerContent={DrawerContent}>
+      <Drawer.Navigator
+        drawerContent={DrawerContent}
+        screenOptions={{
+          headerTintColor:
+            schema === 'dark'
+              ? theme.colors.warmGray[50]
+              : theme.colors.coolGray[800],
+        }}>
         <Drawer.Screen
           name="Dashboard"
           component={UserDashboard}

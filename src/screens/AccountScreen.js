@@ -19,8 +19,21 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 import {useFormik} from 'formik';
 
+/******************************************************************
+ * FIREBASE
+ *****************************************************************/
+// Firebase config
+import {db, auth, storage} from '../firebase/config';
+// firebase firestore
 import {doc, getDoc, serverTimestamp, updateDoc} from 'firebase/firestore';
-import {db, auth} from '../firebase/config';
+// firebase storage
+import {ref, uploadBytes, getDownloadURL} from 'firebase/storage';
+// firebase auth
+import {updateProfile} from 'firebase/auth';
+
+/******************************************************************
+ * FIREBASE
+ *****************************************************************/
 
 // camera
 
@@ -28,6 +41,7 @@ import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 
 export default function AccountScreen() {
   const [editMode, setEditMode] = useState(false);
+  // const [avatar, setAvatar] = useState('');
   const [initialValues, setInitialValues] = useState({
     firstname: '',
     lastname: '',
@@ -80,6 +94,7 @@ export default function AccountScreen() {
       maxWidth: 500,
       maxHeight: 500,
       includeBase64: true,
+      saveToPhotos: true,
     };
     const response = await launchCamera(options);
 
@@ -94,15 +109,20 @@ export default function AccountScreen() {
       console.log(errorMessage);
       console.log('====================================');
     } else {
-      const {base64, uri} = assets;
-      console.log('====================================');
-      console.log(uri);
-      console.log('====================================');
+      const img = assets[0];
+      uploadAvatar(img);
     }
   };
 
   const getPhotoFromStorage = async () => {
     const response = await launchImageLibrary(options);
+    let options = {
+      mediaType: 'photo',
+      maxWidth: 500,
+      maxHeight: 500,
+      includeBase64: true,
+      saveToPhotos: true,
+    };
 
     const {didCancel, errorCode, errorMessage, assets} = response;
 
@@ -115,17 +135,40 @@ export default function AccountScreen() {
       console.log(errorMessage);
       console.log('====================================');
     } else {
-      const {base64, uri} = assets;
-      console.log('====================================');
-      console.log(uri);
-      console.log('====================================');
+      const img = assets[0];
+      uploadAvatar(img);
     }
+  };
+
+  const uploadAvatar = async img => {
+    // on crée une référence pour l'image que le souhaite update avec son nom de stockage
+    const avatarRef = ref(storage, `avatar-${auth.currentUser.uid}.jpg`);
+    // On va récupérer dépuis son emplacement via le protocol http
+    const request = await fetch(img.uri);
+    // On extrait le résultat de l'appel sous forme de blob
+    const response = await request.blob();
+    // on upload l'image récupérer dans le cloud sous forme de blob
+    uploadBytes(avatarRef, response, {contentType: 'image/jpg'}).then(
+      snapshot => {
+        // on récupère lien de l'image
+        getDownloadURL(snapshot.ref).then(downloadUrl => {
+          // on met à jour le profil avec le lien de l'image
+
+          // 1 . On met à jour l'utilisateur courant dans firestore
+          handleUpdate({image: downloadUrl});
+          // On met également l'avatar de l'utilisateur dans auth
+          updateProfile(auth.currentUser, {photoURL: downloadUrl});
+          // on ferme la bottonSheet
+          // onClose();
+        });
+      },
+    );
   };
 
   return (
     <Box flex={1}>
       <Center h={'2/6'} bg="amber.500">
-        <Avatar size="xl" mb={2}>
+        <Avatar size="xl" mb={2} source={{uri: auth.currentUser.photoURL}}>
           AC
           <Avatar.Badge
             size="8"
@@ -139,7 +182,7 @@ export default function AccountScreen() {
             </Pressable>
           </Avatar.Badge>
         </Avatar>
-        <Text>johndoe@gmail</Text>
+        <Text>{auth.currentUser.email}</Text>
       </Center>
       <VStack p={5} space={2}>
         <FormControl>

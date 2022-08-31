@@ -9,7 +9,7 @@ import {
   Input,
   Link,
   VStack,
-  Text
+  Text,
 } from 'native-base';
 
 import {useNavigation} from '@react-navigation/native';
@@ -38,7 +38,7 @@ export default function LoginScreen() {
     const {email, password} = values;
     // Condition de connexion ok
     signInWithEmailAndPassword(auth, email, password).then(userCredential => {
-      console.log(userCredential);
+      console.log('vous êtes connecté !');
       setAuthenticated(true);
     });
   };
