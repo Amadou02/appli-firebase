@@ -1,4 +1,5 @@
-import React, {useContext} from 'react';
+import React, {useContext, useEffect} from 'react';
+// NATIVE BASE
 import {
   Box,
   Button,
@@ -12,12 +13,29 @@ import {
   Text,
 } from 'native-base';
 
+// Hook React navigation pour accéder au context de la react-navigation
 import {useNavigation} from '@react-navigation/native';
+/*******************************************************
+ * FIREBASE
+ ******************************************************/
+// Import de la constante auth de ma config firebase
 import {auth} from '../firebase/config';
+// Méthode de connexion email/mot-de-passe de firebase auth
 import {signInWithEmailAndPassword} from '@firebase/auth';
 
+/*******************************************************
+ * FIREBASE                                            \
+ ******************************************************/
+
+// Custom context pour la gestion globale du state du status d'auth avec son setter.
 import {AuthContext} from './../contexts/AuthContext';
+
+// Librairie de traitement de formulaire
 import {useFormik} from 'formik';
+
+// TouchID
+import touchID from 'react-native-touch-id';
+import {Alert} from 'react-native';
 
 export default function LoginScreen() {
   const navigation = useNavigation();
@@ -34,6 +52,10 @@ export default function LoginScreen() {
       onSubmit: values => login(values),
     });
 
+  useEffect(() => {
+    AuthWithTouchId();
+  }, []);
+
   const login = values => {
     const {email, password} = values;
     // Condition de connexion ok
@@ -42,7 +64,29 @@ export default function LoginScreen() {
       setAuthenticated(true);
     });
   };
-  console.log(values);
+  /**
+   * Authentifcation par l'empreinte digitale
+   */
+  const AuthWithTouchId = () => {
+    const options = {
+      title: 'Confirmez votre identité',
+      sensorDescription:
+        'Utilisez votre empreinte pour confirmer votre identité',
+      sensorErrorDescription: 'empreinte non reconnue',
+    };
+    // On vérifie que le touch id est configurée sur l'appareil de l'utilisateur
+    if(touchID.isSupported) {
+      touchID
+        .authenticate('Authentification par empreinte digital', options)
+        .then(success => {
+          Alert.alert('Authenticated Successfully');
+        })
+        .catch(error => {
+          Alert.alert('Authentication Failed');
+        });
+    }
+  };
+
   return (
     <Center flex={'1'} bgColor="warmGray.5">
       <Box w={'90%'}>
