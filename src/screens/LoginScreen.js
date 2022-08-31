@@ -37,6 +37,9 @@ import {useFormik} from 'formik';
 import touchID from 'react-native-touch-id';
 import {Alert} from 'react-native';
 
+// React native secure key store
+import RNSecureKeyStore, {ACCESSIBLE} from 'react-native-secure-key-store';
+
 export default function LoginScreen() {
   const navigation = useNavigation();
 
@@ -75,7 +78,9 @@ export default function LoginScreen() {
       sensorErrorDescription: 'empreinte non reconnue',
     };
     // On vérifie que le touch id est configurée sur l'appareil de l'utilisateur
-    if(touchID.isSupported) {
+    if (touchID.isSupported) {
+      // On vérifie si l'utilsateur à déjà donnée son accord pour être authentifier par mot de passe
+      checkUserCredentialStored();
       touchID
         .authenticate('Authentification par empreinte digital', options)
         .then(success => {
@@ -85,6 +90,18 @@ export default function LoginScreen() {
           Alert.alert('Authentication Failed');
         });
     }
+  };
+
+  const checkUserCredentialStored = () => {
+    RNSecureKeyStore.get('user')
+      .then(res => {
+        console.log('====================================');
+        console.log('user log');
+        console.log('====================================');
+      })
+      .catch(error => {
+        console.log('error', error);
+      });
   };
 
   return (
