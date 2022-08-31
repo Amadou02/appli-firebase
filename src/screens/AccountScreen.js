@@ -10,16 +10,21 @@ import {
   Fab,
   Icon,
   Button,
-  KeyboardAvoidingView,
+  Pressable,
+  Actionsheet,
+  useDisclose,
 } from 'native-base';
 
-import IonIcons from 'react-native-vector-icons/Ionicons';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 import {useFormik} from 'formik';
 
 import {doc, getDoc, serverTimestamp, updateDoc} from 'firebase/firestore';
 import {db, auth} from '../firebase/config';
-import {Platform} from 'react-native';
+
+// camera
+
+import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 
 export default function AccountScreen() {
   const [editMode, setEditMode] = useState(false);
@@ -27,6 +32,8 @@ export default function AccountScreen() {
     firstname: '',
     lastname: '',
   });
+
+  const {isOpen, onOpen, onClose} = useDisclose();
   const {values, handleChange, handleSubmit} = useFormik({
     initialValues,
     onSubmit: values => {
@@ -67,11 +74,70 @@ export default function AccountScreen() {
       });
   };
 
+  const takePhoto = async () => {
+    let options = {
+      mediaType: 'photo',
+      maxWidth: 500,
+      maxHeight: 500,
+      includeBase64: true,
+    };
+    const response = await launchCamera(options);
+
+    const {didCancel, errorCode, errorMessage, assets} = response;
+
+    if (didCancel) {
+      console.log('====================================');
+      console.log("prise de photo annulé par l'utilisateur");
+      console.log('====================================');
+    } else if (errorCode) {
+      console.log('====================================');
+      console.log(errorMessage);
+      console.log('====================================');
+    } else {
+      const {base64, uri} = assets;
+      console.log('====================================');
+      console.log(uri);
+      console.log('====================================');
+    }
+  };
+
+  const getPhotoFromStorage = async () => {
+    const response = await launchImageLibrary(options);
+
+    const {didCancel, errorCode, errorMessage, assets} = response;
+
+    if (didCancel) {
+      console.log('====================================');
+      console.log("prise de photo annulé par l'utilisateur");
+      console.log('====================================');
+    } else if (errorCode) {
+      console.log('====================================');
+      console.log(errorMessage);
+      console.log('====================================');
+    } else {
+      const {base64, uri} = assets;
+      console.log('====================================');
+      console.log(uri);
+      console.log('====================================');
+    }
+  };
+
   return (
     <Box flex={1}>
       <Center h={'2/6'} bg="amber.500">
         <Avatar size="xl" mb={2}>
           AC
+          <Avatar.Badge
+            size="8"
+            justifyContent="center"
+            backgroundColor="amber.500"
+            shadow="2">
+            <Pressable onPress={onOpen}>
+              <Center>
+                <Icon name="edit" as={MaterialIcons} size="sm" color="white" />
+              </Center>
+            </Pressable>
+          </Avatar.Badge>
         </Avatar>
         <Text>johndoe@gmail</Text>
       </Center>
@@ -104,10 +170,18 @@ export default function AccountScreen() {
           shadow="2"
           size={'sm'}
           colorScheme="amber"
-          icon={<Icon color={'white'} name="md-pencil-sharp" as={IonIcons} />}
+          icon={<Icon color="white" name="edit" as={MaterialIcons} />}
           onPress={() => setEditMode(true)}
         />
       )}
+      <Actionsheet isOpen={isOpen} onClose={onClose}>
+        <Actionsheet.Content>
+          <Actionsheet.Item onPress={takePhoto}>Camera</Actionsheet.Item>
+          <Actionsheet.Item onPress={getPhotoFromStorage}>
+            Galerie photo
+          </Actionsheet.Item>
+        </Actionsheet.Content>
+      </Actionsheet>
     </Box>
   );
 }
