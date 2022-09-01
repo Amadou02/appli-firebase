@@ -1,4 +1,4 @@
-import React, {useContext, useEffect} from 'react';
+import React, {useContext, useEffect, useRef, useState} from 'react';
 // NATIVE BASE
 import {
   Box,
@@ -11,6 +11,7 @@ import {
   Link,
   VStack,
   Text,
+  AlertDialog,
 } from 'native-base';
 
 // Hook React navigation pour accéder au context de la react-navigation
@@ -46,6 +47,17 @@ export default function LoginScreen() {
   const authenContext = useContext(AuthContext);
   const {setAuthenticated} = authenContext;
 
+  // vérif accord pour le touch id
+  const [requestSaveCredentential, setRequestSaveCredentential] =
+    useState(false);
+
+  // Ouverture / fermeture popup
+  const [isOpen, setIsOpen] = useState(true);
+
+  const onClose = () => setIsOpen(false);
+
+  const cancelRef = useRef(null);
+
   const {values, handleChange, handleBlur, handleSubmit, errors, touched} =
     useFormik({
       initialValues: {
@@ -63,8 +75,10 @@ export default function LoginScreen() {
     const {email, password} = values;
     // Condition de connexion ok
     signInWithEmailAndPassword(auth, email, password).then(userCredential => {
-      console.log('vous êtes connecté !');
-      setAuthenticated(true);
+      if (requestSaveCredentential) {
+        console.log('vous êtes connecté !');
+        setAuthenticated(true);
+      }
     });
   };
   /**
@@ -100,10 +114,11 @@ export default function LoginScreen() {
         console.log('====================================');
       })
       .catch(error => {
-        console.log('error', error);
+        setRequestSaveCredentential(true);
       });
   };
 
+  // Affichage du popup demande activation touch id
   return (
     <Center flex={'1'} bgColor="warmGray.5">
       <Box w={'90%'}>
