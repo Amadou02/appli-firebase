@@ -11,6 +11,7 @@ import {
   ScrollView,
   HStack,
   Link,
+  useToast,
 } from 'native-base';
 import React from 'react';
 import {TouchableOpacity} from 'react-native';
@@ -45,20 +46,23 @@ const validationSchema = yup.object({
 });
 
 export default function RegistrationScreen() {
+  // Récupération du props navigation de react navigation
   const navigation = useNavigation();
+  // Toast de notification
+  const toast = useToast();
   // Récupération des props useFormik
-  const {values, handleChange, handleBlur, handleSubmit, errors, touched} =
-    useFormik({
-      initialValues: {
-        email: '',
-        password: '',
-        confirmPassword: '',
-        firstname: '',
-        lastname: '',
-        role: '',
-      },
-      onSubmit: values => signIn(values),
-    });
+  const {values, handleChange, handleSubmit, errors, touched} = useFormik({
+    initialValues: {
+      email: '',
+      password: '',
+      confirmPassword: '',
+      firstname: '',
+      lastname: '',
+      role: '',
+    },
+    onSubmit: values => signIn(values),
+    validationSchema,
+  });
   const signIn = values => {
     /**
      * @var string email
@@ -77,13 +81,14 @@ export default function RegistrationScreen() {
         delete values.password;
         delete values.confirmPassword;
 
-        console.log(values);
         // on modifit et persiste les données dans firestore
         setDoc(userDoc, {
           ...values,
           createdAt: serverTimestamp(),
         }).then(userCredential => {
-          console.log('user created!');
+          toast.show({
+            description: 'Compte créé avec succès !',
+          });
         });
         console.log(user);
         // on appelle firestore pour persister une version de notre user avec plus d'info
@@ -101,51 +106,71 @@ export default function RegistrationScreen() {
             Pour commencer, créer un votre compte
           </Text>
           <VStack space={2}>
-            <FormControl>
+            <FormControl isInvalid={touched.email && errors?.email}>
               <FormControl.Label>Email</FormControl.Label>
               <Input
                 value={values.email}
                 onChangeText={handleChange('email')}
               />
+              <FormControl.ErrorMessage>
+                {errors?.email}
+              </FormControl.ErrorMessage>
             </FormControl>
-            <FormControl>
+            <FormControl isInvalid={touched.password && errors?.password}>
               <FormControl.Label>Mot de passe</FormControl.Label>
               <Input
                 value={values.password}
                 onChangeText={handleChange('password')}
               />
+              <FormControl.ErrorMessage>
+                {errors?.password}
+              </FormControl.ErrorMessage>
             </FormControl>
             <FormControl>
-              <FormControl.Label>
+              <FormControl.Label
+                isInvalid={touched.confirmPassword && errors?.confirmPassword}
+              >
                 Confirmation du mot de passe
               </FormControl.Label>
               <Input
                 value={values.confirmPassword}
                 onChangeText={handleChange('confirmPassword')}
               />
+              <FormControl.ErrorMessage>
+                {errors?.confirmPassword}
+              </FormControl.ErrorMessage>
             </FormControl>
-            <FormControl>
+            <FormControl isInvalid={touched.firstname && errors?.firstname}>
               <FormControl.Label>Prénom</FormControl.Label>
               <Input
                 value={values.firstname}
                 onChangeText={handleChange('firstname')}
               />
+              <FormControl.ErrorMessage>
+                {errors?.firstname}
+              </FormControl.ErrorMessage>
             </FormControl>
-            <FormControl>
+            <FormControl isInvalid={touched.lastname && errors?.lastname}>
               <FormControl.Label>Nom</FormControl.Label>
               <Input
                 value={values.lastname}
                 onChangeText={handleChange('lastname')}
               />
+              <FormControl.ErrorMessage>
+                {errors?.lastname}
+              </FormControl.ErrorMessage>
             </FormControl>
-            <FormControl>
+            <FormControl isInvalid={touched.role && errors?.role}>
               <FormControl.Label>Rôle</FormControl.Label>
               <Select onValueChange={handleChange('role')}>
                 <Select.Item label="Je suis un donateur" value="donor" />
                 <Select.Item label="Je suis un collecteur" value="collector" />
               </Select>
+              <FormControl.ErrorMessage>
+                {errors?.role}
+              </FormControl.ErrorMessage>
             </FormControl>
-            <Button colorScheme='amber' onPress={handleSubmit}>
+            <Button colorScheme="amber" onPress={handleSubmit}>
               S'inscrire
             </Button>
           </VStack>
@@ -157,7 +182,8 @@ export default function RegistrationScreen() {
                 color: 'amber.500',
                 fontWeight: 'medium',
                 fontSize: 'sm',
-              }}>
+              }}
+            >
               Se connecter
             </Link>
           </HStack>

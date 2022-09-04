@@ -22,6 +22,7 @@ import {
   Pressable,
   HStack,
   Icon,
+  useToast,
 } from 'native-base';
 // dayjs
 import dayjs from 'dayjs';
@@ -40,6 +41,9 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 export default function UserDashboard() {
   const [adverts, setAdverts] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // toast de notification
+  const toast = useToast();
 
   useEffect(() => {
     const user_id = auth.currentUser.uid;
@@ -80,12 +84,10 @@ export default function UserDashboard() {
     // on supprime la ligne dans la base
     deleteDoc(doc(db, 'adverts', rowKey))
       .then(querySnapShot => {
-        // closeRow(rowMap, rowKey);
-        // const newData = [...adverts];
-        // const prevIndex = adverts.findIndex(item => item.key === rowKey);
-        // newData.splice(prevIndex, 1);
-        // setAdverts(newData);
         console.log('supp réussie !');
+        toast.show({
+          description: 'Annonce supprimée avec succès !',
+        });
       })
       .catch(e => {
         console.log(e.message);
@@ -101,11 +103,12 @@ export default function UserDashboard() {
         }}
         _light={{
           bg: 'white',
-        }}>
+        }}
+      >
         <VStack p={3} space="2">
           <Heading size="sm">{item.title}</Heading>
           <Box _text={{color: 'muted.500'}}>
-            {dayjs(item.createdAt.toDate()).format('LLLL')}
+            {dayjs(item?.createdAt?.toDate()).format('LLLL')}
           </Box>
         </VStack>
       </Box>
@@ -124,7 +127,8 @@ export default function UserDashboard() {
           onPress={() => closeRow(rowMap, data.item.id)}
           _pressed={{
             opacity: 0.5,
-          }}>
+          }}
+        >
           <VStack alignItems="center" space={2}>
             <Icon
               as={<Entypo name="dots-three-horizontal" />}
@@ -144,7 +148,8 @@ export default function UserDashboard() {
           onPress={() => deleteRow(rowMap, data.item.id)}
           _pressed={{
             opacity: 0.5,
-          }}>
+          }}
+        >
           <VStack alignItems="center" space={2}>
             <Icon
               as={<MaterialIcons name="delete" />}

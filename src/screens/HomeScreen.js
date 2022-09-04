@@ -108,14 +108,15 @@ export default function HomeScreen() {
         }}
         _light={{
           bg: 'white',
-        }}>
+        }}
+      >
         <VStack space="2">
           <Heading isTruncated size="sm">
             {item.title}
           </Heading>
           <HStack alignItems="center" space="2">
             <Icon as={IonIcons} name="md-time-outline" />
-            <Text>{dayjs(item.createdAt?.toDate())?.fromNow()}</Text>
+            <Text>{dayjs(item?.createdAt?.toDate())?.fromNow()}</Text>
           </HStack>
         </VStack>
       </Box>

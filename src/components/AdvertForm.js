@@ -1,12 +1,22 @@
+// React
 import React, {useState, useRef} from 'react';
-import {Box, Button, FormControl, Heading, Input, VStack} from 'native-base';
+// Native base
+import {
+  Box,
+  Button,
+  FormControl,
+  Heading,
+  Input,
+  VStack,
+  useToast,
+} from 'native-base';
 
-import * as yup from 'yup';
-import {useFormik} from 'formik';
-
+// DateTime picker widget
 import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
-
-// firebase
+/**
+ * Google firebase
+ */
+// firebase firestore
 import {
   collection,
   setDoc,
@@ -15,26 +25,42 @@ import {
   Timestamp,
   serverTimestamp,
 } from 'firebase/firestore';
+// configuration de firestore
 import {db, auth} from '../firebase/config';
 
+/**
+ * Traitement et validation de formulaire
+ */
+// Traitement de formulaire
+import {useFormik} from 'formik';
+// Validation de formulaire
+import * as yup from 'yup';
+// règles de validation des champs du formulaire
 const validationSchema = yup.object({
   title: yup.string().required('Le titre est requis'),
   description: yup.string(),
   available: yup
-    .date("La valeur renseigné n'est pas une date valide")
+    .date()
+    .typeError("La valeur renseigné n'est pas une date valide")
     .required('La date de disponibilité du don est requis'),
   expiration: yup
-    .date("La valeur renseigné n'est pas une date valide")
+    .date()
+    .typeError("La valeur renseigné n'est pas une date valide")
     .required("La date d'expiration est requise"),
 });
 
 export default function AdvertForm() {
+  // Gestion de l'affichage des pickers de date
   const [showAvailableDatePicker, setShowAvailableDatePicker] = useState(false);
-  const [showExpirationDatePicker, setShowExpirationDatePicker] =
-    useState(false);
-
+  const [showExpirationDatePicker, setShowExpirationDatePicker] = useState(
+    false,
+  );
+  // création de ref sur les inputs des champs date afin de leur enlever le focus un fois que l'utilisateur a chosi une date
   const availableInputRef = useRef(null);
   const expirationInputRef = useRef(null);
+  // toast de notification de l'utilisateur
+  const toast = useToast();
+  // initialisation de formik avec le hook dédié
   const {
     values,
     setFieldValue,
@@ -44,6 +70,7 @@ export default function AdvertForm() {
     handleSubmit,
     isSubmitting,
     touched,
+    resetForm,
   } = useFormik({
     initialValues: {
       title: '',
@@ -52,6 +79,7 @@ export default function AdvertForm() {
       expiration: null,
     },
     onSubmit: values => createAds(values),
+    validationSchema,
   });
 
   const availableDateChange = (event, selectedDate) => {
@@ -79,6 +107,11 @@ export default function AdvertForm() {
       user_id: auth.currentUser.uid,
     }).then(newAdvert => {
       console.log('nouveau', newAdvert.id);
+      // notification de succès
+      toast.show({
+        description: 'Annonce ajoutée avec succès !',
+      });
+      resetForm();
     });
   };
 
@@ -106,18 +139,22 @@ export default function AdvertForm() {
     <Box p={5}>
       <Heading>Nouvelle annonce</Heading>
       <VStack space={2}>
-        <FormControl>
+        <FormControl isInvalid={touched.title && errors?.title}>
           <FormControl.Label>Titre</FormControl.Label>
           <Input value={values.title} onChangeText={handleChange('title')} />
+          <FormControl.ErrorMessage>{errors?.title}</FormControl.ErrorMessage>
         </FormControl>
-        <FormControl>
+        <FormControl isInvalid={touched.description && errors?.description}>
           <FormControl.Label>Description</FormControl.Label>
           <Input
             value={values.description}
             onChangeText={handleChange('description')}
           />
+          <FormControl.ErrorMessage>
+            {errors?.description}
+          </FormControl.ErrorMessage>
         </FormControl>
-        <FormControl>
+        <FormControl isInvalid={touched.available && errors?.available}>
           <FormControl.Label>Disponibilité</FormControl.Label>
           <Input
             onFocus={() => setShowAvailableDatePicker(true)}
@@ -126,6 +163,9 @@ export default function AdvertForm() {
             value={values.available?.toISOString()}
             onChangeText={handleChange('available')}
           />
+          <FormControl.ErrorMessage>
+            {errors?.available}
+          </FormControl.ErrorMessage>
         </FormControl>
         {showAvailableDatePicker &&
           DateTimePickerAndroid.open({
@@ -133,7 +173,7 @@ export default function AdvertForm() {
             value: new Date(),
             onChange: availableDateChange,
           })}
-        <FormControl>
+        <FormControl isInvalid={touched.expiration && errors?.expiration}>
           <FormControl.Label>DLC/DLUO</FormControl.Label>
           <Input
             onFocus={() => {
@@ -145,6 +185,9 @@ export default function AdvertForm() {
             value={values.expiration?.toISOString()}
             onChangeText={handleChange('expiration')}
           />
+          <FormControl.ErrorMessage>
+            {errors?.expiration}
+          </FormControl.ErrorMessage>
         </FormControl>
         {showExpirationDatePicker &&
           DateTimePickerAndroid.open({
