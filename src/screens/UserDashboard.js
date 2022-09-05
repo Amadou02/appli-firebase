@@ -1,17 +1,22 @@
 // react react-native
 import {ActivityIndicator} from 'react-native';
 import React, {useEffect, useState} from 'react';
+/************************************************
+ * Firebase
+ ***********************************************/
+// import {
+//   collection,
+//   query,
+//   where,
+//   deleteDoc,
+//   doc,
+//   onSnapshot,
+// } from 'firebase/firestore';
+// import {db, auth} from '../firebase/config';
 
-// firebase
-import {
-  collection,
-  query,
-  where,
-  deleteDoc,
-  doc,
-  onSnapshot,
-} from 'firebase/firestore';
-import {db, auth} from '../firebase/config';
+import firestore from '@react-native-firebase/firestore';
+
+import auth from '@react-native-firebase/auth';
 
 import {
   Box,
@@ -46,29 +51,29 @@ export default function UserDashboard() {
   const toast = useToast();
 
   useEffect(() => {
-    const user_id = auth.currentUser.uid;
-    const advertColRef = collection(db, 'adverts');
+    // const user_id = auth.currentUser.uid;
+    const user_id = auth().currentUser.uid;
 
-    const q = query(advertColRef, where('user_id', '==', user_id));
-
-    const unsubscribe = onSnapshot(
-      q,
-      querySnapshot => {
-        const advertsArray = [];
-        querySnapshot.forEach(doc => {
-          advertsArray.push({
-            ...doc.data(),
-            id: doc.id,
+    const subscriber = firestore()
+      .collection('adverts')
+      .where('user_id', '==', user_id)
+      .onSnapshot(
+        querySnapshot => {
+          const advertsArray = [];
+          querySnapshot.forEach(doc => {
+            advertsArray.push({
+              ...doc.data(),
+              id: doc.id,
+            });
           });
-        });
-        setAdverts(advertsArray);
-        setLoading(false);
-      },
-      error => {
-        console.log(e.massage);
-      },
-    );
-    return () => unsubscribe();
+          setAdverts(advertsArray);
+          setLoading(false);
+        },
+        error => {
+          console.log(error.massage);
+        },
+      );
+    return () => subscriber();
   }, []);
 
   // react-native-swipe-list-view

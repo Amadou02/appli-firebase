@@ -22,8 +22,13 @@ import {
 import IonIcons from 'react-native-vector-icons/Ionicons';
 import {AuthContext} from '../contexts/AuthContext';
 
-import {signOut} from 'firebase/auth';
-import {auth} from '../firebase/config';
+/******************************************************************
+ * Firebase
+ *****************************************************************/
+import auth from '@react-native-firebase/auth';
+// import {signOut} from 'firebase/auth';
+// import {auth} from '../firebase/config';
+
 import {LogBox, useColorScheme} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -39,12 +44,14 @@ const DrawerContent = props => {
   const {setAuthenticated} = authContext;
 
   const handleLogout = () => {
-    signOut(auth).then(userCredential => {
-      setAuthenticated(false);
-      console.log('====================================');
-      console.log('déconnexion réussie');
-      console.log('====================================');
-    });
+    auth()
+      .signOut()
+      .then(userCredential => {
+        setAuthenticated(false);
+        console.log('====================================');
+        console.log('déconnexion réussie');
+        console.log('====================================');
+      });
   };
 
   const getData = async () => {
@@ -71,7 +78,7 @@ const DrawerContent = props => {
         console.log('allumé');
         await AsyncStorage.setItem('@userAuth', 'true');
         setChecked(true);
-      } else {       
+      } else {
         console.log('eteint');
         await AsyncStorage.removeItem('@userAuth');
         setChecked(false);
@@ -97,12 +104,12 @@ const DrawerContent = props => {
             size="lg"
             mb={3}
             source={{
-              uri: auth.currentUser.photoURL,
+              uri: auth().currentUser.photoURL,
             }}
           >
             AC
           </Avatar>
-          <Text>{auth.currentUser.email}</Text>
+          <Text>{auth().currentUser.email}</Text>
         </Box>
         <VStack divider={<Divider />} space="4" flexGrow={1}>
           <VStack space={4}>
@@ -122,7 +129,11 @@ const DrawerContent = props => {
           <HStack alignItems={'center'} space="2">
             <Icon name="finger-print" as={IonIcons} />
             <Text>Connexion biometrique</Text>
-            <Switch isChecked={checked} size="sm" onChange={handleSwichChange} />
+            <Switch
+              isChecked={checked}
+              size="sm"
+              onChange={handleSwichChange}
+            />
           </HStack>
         </VStack>
         <HStack alignItems={'center'} space={3}>

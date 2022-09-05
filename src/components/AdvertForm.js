@@ -11,26 +11,21 @@ import {
   useToast,
 } from 'native-base';
 
+// Sonnerie de notification
+
+import NotificationSounds, {
+  playSampleSound,
+} from 'react-native-notification-sounds';
+
 // DateTime picker widget
 import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
 /**
  * Google firebase
  */
-// firebase firestore
-import {
-  collection,
-  setDoc,
-  addDoc,
-  doc,
-  Timestamp,
-  serverTimestamp,
-} from 'firebase/firestore';
-// configuration de firestore
-import {db, auth} from '../firebase/config';
 
-/**
- * Traitement et validation de formulaire
- */
+import firestore from '@react-native-firebase/firestore';
+import auth from '@react-native-firebase/auth';
+
 // Traitement de formulaire
 import {useFormik} from 'formik';
 // Validation de formulaire
@@ -98,41 +93,36 @@ export default function AdvertForm() {
   };
 
   const createAds = values => {
-    const advertsRef = collection(db, 'adverts');
-    addDoc(advertsRef, {
-      ...values,
-      available: Timestamp.fromDate(values.available),
-      expiration: Timestamp.fromDate(values.expiration),
-      createdAt: serverTimestamp(),
-      user_id: auth.currentUser.uid,
-    }).then(newAdvert => {
-      console.log('nouveau', newAdvert.id);
-      // notification de succès
-      toast.show({
-        description: 'Annonce ajoutée avec succès !',
-      });
-      resetForm();
-    });
-  };
-
-  const updateAds = (values, id) => {
-    // on récupère le document à modifier
-    const advertsDocRef = doc(db, 'adverts', id);
-    // on le modifier avec la méthode setDoc (possibilité d'utiliser un autre méthode)
-    // le merge est import sinon, les colonnes non présente dans values seront écrasées de la nouvelle version du document.
-    // j'ai ajouté la colonne updatedAt pour avoir une date de dernière modification
-    setDoc(
-      advertsDocRef,
-      {
+    firestore()
+      .collection('adverts')
+      .add({
         ...values,
-        updatedAt: serverTimestamp(),
-      },
-      {
-        merge: true,
-      },
-    ).then(() => {
-      console.log('annonce modifiée avec succès');
-    });
+        available: firestore.Timestamp.fromDate(values.available),
+        expiration: firestore.Timestamp.fromDate(values.expiration),
+        createdAt: firestore.FieldValue.serverTimestamp(),
+        user_id: auth().currentUser.uid,
+      })
+      .then(async newAdvert => {
+        toast.show({
+          description: 'Annonce ajoutée avec succès !',
+        });
+        resetForm();
+
+        await sendPushNotification(values.title)
+          .then(async () => {
+            console.log('Notification créée !');
+
+            await NotificationSounds.getNotifications('notification').then(
+              soundsList => {
+                console.log('notif envoyée');
+                playSampleSound(soundsList[soundsList.length - 1]);
+              },
+            );
+          })
+          .catch(error => {
+            console.log('Erreur', error.message);
+          });
+      });
   };
 
   return (

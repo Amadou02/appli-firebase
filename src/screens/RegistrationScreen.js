@@ -21,10 +21,12 @@ import {useFormik} from 'formik';
 import * as yup from 'yup';
 
 // firebase imports
-import {createUserWithEmailAndPassword} from 'firebase/auth';
-import {collection, doc, setDoc, serverTimestamp} from 'firebase/firestore';
+// import {createUserWithEmailAndPassword} from 'firebase/auth';
+import auth from '@react-native-firebase/auth';
+// import {collection, doc, setDoc, serverTimestamp} from 'firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
 
-import {auth, db} from '../firebase/config';
+// import {auth, db} from '../firebase/config';
 import {useNavigation} from '@react-navigation/native';
 
 // schema de validation
@@ -70,31 +72,29 @@ export default function RegistrationScreen() {
      */
     const {email, password} = values;
     // Condition de connexion ok
-    createUserWithEmailAndPassword(auth, email.trim(), password.trim())
+    auth()
+      .createUserWithEmailAndPassword(email.trim(), password.trim())
       .then(userCredential => {
         const user = userCredential.user;
         const id = user.uid;
-        // récupérer la collection
-        const userCollRef = collection(db, 'users');
-        // on récupère le doc qui à l'id de l'utilisateur. Il le crée s'il n'existe pas.
-        const userDoc = doc(userCollRef, id);
         delete values.password;
         delete values.confirmPassword;
 
-        // on modifit et persiste les données dans firestore
-        setDoc(userDoc, {
-          ...values,
-          createdAt: serverTimestamp(),
-        }).then(userCredential => {
-          toast.show({
-            description: 'Compte créé avec succès !',
+        firestore()
+          .collection('users')
+          .doc(id)
+          .set({
+            ...values,
+            createdAt: firestore.FieldValue.serverTimestamp(),
+          })
+          .then(userCredential => {
+            toast.show({
+              description: 'Compte créé avec succès !',
+            });
+          })
+          .catch(error => {
+            console.log(error.message);
           });
-        });
-        console.log(user);
-        // on appelle firestore pour persister une version de notre user avec plus d'info
-      })
-      .catch(error => {
-        console.log(error.message);
       });
   };
   return (

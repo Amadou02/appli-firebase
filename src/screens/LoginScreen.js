@@ -26,9 +26,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  * FIREBASE
  ******************************************************/
 // Import de la constante auth de ma config firebase
-import {auth} from '../firebase/config';
+// import {auth} from '../firebase/config';
 // Méthode de connexion email/mot-de-passe de firebase auth
-import {signInWithEmailAndPassword} from '@firebase/auth';
+// import {signInWithEmailAndPassword, } from '';
+import auth from '@react-native-firebase/auth';
 
 /*******************************************************
  * FIREBASE                                            \
@@ -102,7 +103,8 @@ export default function LoginScreen() {
   const login = values => {
     const {email, password} = values;
     // Condition de connexion ok
-    signInWithEmailAndPassword(auth, email, password)
+    auth()
+      .signInWithEmailAndPassword(email, password)
       .then(userCredential => {
         console.log('vous êtes connecté !');
         // on stocke les information de l'utilisateur dans le storage

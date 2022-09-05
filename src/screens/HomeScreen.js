@@ -18,10 +18,16 @@ import {
 // react-native-vector-icons
 import IonIcons from 'react-native-vector-icons/Ionicons';
 
-// firebase
-import {collection, getDocs, onSnapshot} from 'firebase/firestore';
-import {db} from '../firebase/config';
-
+/********************************************************
+ * FIREBASE
+ ********************************************************/
+// firestore
+// import {collection, onSnapshot} from 'firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
+// google firestore cloud messaging
+import messaging from '@react-native-firebase/messaging';
+// firebase auth
+import auth from '@react-native-firebase/auth';
 // dayjs - manipulation de date
 import dayjs from 'dayjs';
 import 'dayjs/locale/fr';
@@ -29,6 +35,7 @@ import 'dayjs/locale/fr';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import updateLocale from 'dayjs/plugin/updateLocale';
 import {useNavigation} from '@react-navigation/native';
+import {VAPID_KEY} from '../constants';
 
 dayjs.locale('fr');
 dayjs.extend(relativeTime);
@@ -57,45 +64,74 @@ export default function HomeScreen() {
   const [adverts, setAdverts] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
+  /**
+   * Permet de faire une demande d'autorisation avec la boite de dialogue native de la plateforme (IOS/Android)
+   * @returns boolean
+   */
+  const requestUserPermission = async () => {
+    const authStatus = await messaging().requestPermission();
+    const enabled =
+      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+    return enabled;
+  };
+  /**
+   *
+   * @param any userRef
+   */
+  const isNotifiable = async userRef => {
+    const querySnap = await userRef.get();
+    const userData = querySnap.data();
+    if (userData.role === 'receiver') {
+      return true;
+    }
+    return false;
+  };
 
   useEffect(() => {
-    const advertsRef = collection(db, 'adverts');
-    // getDocs(advertsRef)
-    //   .then(querySnapShot => {
-    //     const advertsArray = [];
-
-    //     querySnapShot.forEach(doc => {
-    //       advertsArray.push({
-    //         ...doc.data(),
-    //         id: doc.id,
-    //       });
-    //     });
-    //     setAdverts(advertsArray);
-    //   })
-    //   .catch(e => {
-    //     console.log(e.message);
-    //   })
-    //   .finally(() => {
-    //     setLoading(false);
-    //   });
-    const unsubscribe = onSnapshot(
-      advertsRef,
-      querySnapShot => {
-        const advertsArray = [];
-        querySnapShot.forEach(doc => {
-          advertsArray.push({
-            ...doc.data(),
-            id: doc.id,
+    const subscriber = firestore()
+      .collection('adverts')
+      .onSnapshot(
+        querySnapShot => {
+          const advertsArray = [];
+          querySnapShot.forEach(doc => {
+            advertsArray.push({
+              ...doc.data(),
+              id: doc.id,
+            });
           });
+          setAdverts(advertsArray);
+          setLoading(false);
+        },
+        error => {
+          console.log(error.message);
+        },
+      );
+    return () => subscriber();
+  }, []);
+
+  // Demande de permission de reception de notification
+  useEffect(() => {
+    const asyncBootstrap = async () => {
+      const userDocID = auth().currentUser.uid;
+      const userRef = firestore().collection('users').doc(userDocID);
+      // status de l'utilisateur et auth
+      const checkIsNotifiable = await isNotifiable(userRef);
+      const checkPermission = await requestUserPermission();
+      // Utilisateur est notifiable et à donner son accord
+      if (checkIsNotifiable && checkPermission) {
+        await messaging().registerDeviceForRemoteMessages();
+        // on récupère le jeton unique FCM pour l'utilisateur
+        const fcmToken = await messaging().getToken();
+        // On persiste l'identifiant unique de l'utilisateur courant
+        userRef.update({
+          fcmToken: fcmToken,
         });
-        setAdverts(advertsArray);
-        setLoading(false);
-      },
-      error => {
-        console.log(error.message);
-      },
-    );
-    return () => unsubscribe();
+      }
+    };
+
+    asyncBootstrap();
   }, []);
 
   const renderItem = ({item}) => (
