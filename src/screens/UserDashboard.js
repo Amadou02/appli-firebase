@@ -87,7 +87,10 @@ export default function UserDashboard() {
   const deleteRow = (rowMap, rowKey) => {
     console.log(rowKey);
     // on supprime la ligne dans la base
-    deleteDoc(doc(db, 'adverts', rowKey))
+    firestore()
+      .collection('adverts')
+      .doc(rowKey)
+      .delete()
       .then(querySnapShot => {
         console.log('supp réussie !');
         toast.show({

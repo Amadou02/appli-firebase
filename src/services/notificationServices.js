@@ -1,8 +1,12 @@
 import {KEY} from '../constants';
+// to: '/topics/chatroom',
 
-export const sendPushNotification = async body => {
+export const sendPushNotification = async (registration_ids, body) => {
+  console.log('====================================');
+  console.log(registration_ids);
+  console.log('====================================');
   const message = {
-    to: '/topics/chatroom',
+    registration_ids: registration_ids,
     collapse_key: 'type_a',
     notification: {
       title: "Un nouveau don dans l'app",
@@ -11,7 +15,7 @@ export const sendPushNotification = async body => {
       sound: 1,
       show_in_foreground: true,
       priority: 'high',
-      content_available: true,
+      content_available: true
     },
   };
 
@@ -22,5 +26,8 @@ export const sendPushNotification = async body => {
       Authorization: `key=${KEY}`,
     },
     body: JSON.stringify(message),
-  }).then(res => res.json());
+  }).then(res => {
+    console.log(res);
+    res.json();
+  });
 };

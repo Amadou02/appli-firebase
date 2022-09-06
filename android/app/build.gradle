@@ -1,5 +1,6 @@
 apply plugin: "com.android.application"
 apply plugin: "com.google.gms.google-services"
+// apply plugin: "maven-publish"
 
 apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
 
@@ -133,7 +134,6 @@ def reactNativeArchitectures() {
 
 android {
     ndkVersion rootProject.ext.ndkVersion
-
     compileSdkVersion rootProject.ext.compileSdkVersion
 
     defaultConfig {

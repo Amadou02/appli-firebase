@@ -1,5 +1,5 @@
 // React
-import React, {useState, useRef} from 'react';
+import React, {useState, useRef, useEffect} from 'react';
 // Native base
 import {
   Box,
@@ -11,12 +11,6 @@ import {
   useToast,
 } from 'native-base';
 
-// Sonnerie de notification
-
-import NotificationSounds, {
-  playSampleSound,
-} from 'react-native-notification-sounds';
-
 // DateTime picker widget
 import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
 /**
@@ -25,6 +19,9 @@ import {DateTimePickerAndroid} from '@react-native-community/datetimepicker';
 
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
+
+// Custom service d'appel API création de notification PUSH
+import {sendPushNotification} from '../services/notificationServices';
 
 // Traitement de formulaire
 import {useFormik} from 'formik';
@@ -92,6 +89,26 @@ export default function AdvertForm() {
     expirationInputRef.current.blur();
   };
 
+  const getRegistrationIds = async () => {
+    const collectors = [];
+
+    const querySnap = await firestore()
+      .collection('users')
+      .where('role', '==', 'collector')
+      .limit(500)
+      .get();
+
+    querySnap.forEach(doc => {
+      collectors.push(doc.data());
+    });
+
+    const registration_ids = collectors
+      .filter(collector => collector.fcmToken)
+      .map(item => item.fcmToken);
+    console.log(registration_ids, 'ids');
+    return registration_ids;
+  };
+
   const createAds = values => {
     firestore()
       .collection('adverts')
@@ -108,22 +125,21 @@ export default function AdvertForm() {
         });
         resetForm();
 
-        await sendPushNotification(values.title)
-          .then(async () => {
-            console.log('Notification créée !');
+        const registration_ids = await getRegistrationIds();
 
-            await NotificationSounds.getNotifications('notification').then(
-              soundsList => {
-                console.log('notif envoyée');
-                playSampleSound(soundsList[soundsList.length - 1]);
-              },
-            );
+        sendPushNotification(registration_ids, values.title)
+          .then(() => {
+            console.log('Notification créée !');
           })
           .catch(error => {
             console.log('Erreur', error.message);
           });
       });
   };
+
+  useEffect(() => {
+    getRegistrationIds();
+  }, []);
 
   return (
     <Box p={5}>

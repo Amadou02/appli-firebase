@@ -83,7 +83,7 @@ export default function HomeScreen() {
   const isNotifiable = async userRef => {
     const querySnap = await userRef.get();
     const userData = querySnap.data();
-    if (userData.role === 'receiver') {
+    if (userData.role === 'collector') {
       return true;
     }
     return false;
@@ -119,11 +119,13 @@ export default function HomeScreen() {
       // status de l'utilisateur et auth
       const checkIsNotifiable = await isNotifiable(userRef);
       const checkPermission = await requestUserPermission();
+      console.log(checkPermission);
       // Utilisateur est notifiable et à donner son accord
       if (checkIsNotifiable && checkPermission) {
         await messaging().registerDeviceForRemoteMessages();
         // on récupère le jeton unique FCM pour l'utilisateur
         const fcmToken = await messaging().getToken();
+        console.log(fcmToken);
         // On persiste l'identifiant unique de l'utilisateur courant
         userRef.update({
           fcmToken: fcmToken,
